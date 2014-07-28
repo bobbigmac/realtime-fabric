@@ -126,8 +126,31 @@ Template.objects.object = function() {
           scaleX: this.scaleX,
           scaleY: this.scaleY
         });
+      case "itext":
+        return new fabric.IText(this.text || 'Text', {
+          width: this.width,
+          height: this.height,
+          fontFamily: 'helvetica,arial,sans',
+          scaleX: this.scaleX,
+          scaleY: this.scaleY
+        });
     }
   }).call(this);
+
+  if(this.obj_type == 'itext')
+  {
+    (function() {
+      var localObj = obj;
+      localObj.on("text:changed", function() {
+        localObj.on("editing:exited", function() {
+          on_object_modified({target: localObj});
+          localObj.off("editing:exited");
+        });
+        localObj.off("text:changed");
+      });
+    })();
+  }
+
   obj.fill = this.fill;
   obj.setAngle(this.angle);
   obj.originX = 'center';
@@ -152,8 +175,11 @@ var add_fabric_thing = function(obj_type) {
     height: random_range(30, 70),
     angle: 0
   };
-  if (obj_type === "rect" || obj_type === "triangle" || obj_type === "circle") {
+  if (obj_type === "rect" || obj_type === "triangle" || obj_type === "circle" || obj_type === "itext") {
     data.fill = "rgb(" + (random_range(70, 200)) + "," + (random_range(70, 200)) + "," + (random_range(70, 200)) + ")";
+    if (obj_type === "itext") {
+      data.text = 'Text';
+    }
     if (obj_type === "circle") {
       data.scaleX = 0.5;
       data.scaleY = 0.5;
@@ -165,12 +191,17 @@ var add_fabric_thing = function(obj_type) {
 var on_object_modified = function(memo) {
   var data, target;
   target = memo.target;
+
   data = {
-    angle: target.getAngle(),
     top: target.top,
-    left: target.left
+    left: target.left,
+    angle: target.getAngle(),
   };
-  if (target.obj_type === "circle") {
+  if (target.obj_type === "itext") {
+    data.text = target.text;
+    //TODO: Get style
+  }
+  if (target.obj_type === "circle" || target.obj_type === "itext") {
     data.scaleX = target.scaleX;
     data.scaleY = target.scaleY;
   } else {
@@ -208,6 +239,9 @@ Router = new RoomsRouter;
 Meteor.startup(function() {
   window.canvas = new fabric.Canvas('c');
   window.canvas.observe("object:modified", on_object_modified);
+  /*window.canvas.observe('text:changed', function(e) {//Prob need to upgrade fabric for this to work
+    console.log('text:changed', e.target, e);
+  });*/
   return Backbone.history.start({
     pushState: true
   });
