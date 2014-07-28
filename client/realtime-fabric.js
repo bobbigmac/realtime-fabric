@@ -1,10 +1,11 @@
 
-Session.set('room_id', null);
+Session.setDefault('room_id', null);
 
 Meteor.subscribe('rooms', function() {
   var room;
   var room_id = Session.get('room_id');
-  if (room_id != null) {
+
+  if (room_id == null) {
     room = Rooms.findOne({}, {
       sort: {
         name: 1
@@ -91,11 +92,7 @@ Template.objects.any_room_selected = function() {
 };
 
 Template.objects.objects = function() {
-  var room_id;
-  room_id = Session.get('room_id');
-  if (room_id == null) {
-    return {};
-  }
+  var room_id = Session.get('room_id');
   return Objects.find({ room_id: room_id }, { sort: { timestamp: 1 } });
 };
 
@@ -108,7 +105,9 @@ Template.objects.object = function() {
       }
     };
   })(this));
+
   obj = (function() {
+    //TODO: Could tweak this to return existing (and not remove them above)
     switch (this.obj_type) {
       case "rect":
         return new fabric.Rect({
@@ -139,7 +138,7 @@ Template.objects.object = function() {
 
   if(this.obj_type == 'itext')
   {
-    (function() {
+    (function() { //maybe cleanup anon func
       var localObj = obj;
       localObj.on("text:changed", function() {
         localObj.on("editing:exited", function() {
