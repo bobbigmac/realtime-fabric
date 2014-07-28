@@ -17,8 +17,32 @@ body {
       background: lighten(@blue, 10%);
     }
   }
+  h3 {
+    padding: 10px 10px 0;
+    margin: 0;
+  }
   #create-room {
     border-top: 1px solid @blue;
     padding: 10px 10px 0;
+  }
+  #new-room {
+    width: 90%;
+  }
+}
+#toolbar {
+  .github-link {
+    padding: 5px;
+  }
+  .icon {
+    display: inline-block;
+    margin-right: 5px;
+    font-size: 42px;
+  }
+  .icon-play {
+    -webkit-transform:rotate(-90deg);
+    -moz-transform:rotate(-90deg);
+    -o-transform:rotate(-90deg);
+    /* filter:progid:DXImageTransform.Microsoft.BasicImage(rotation=-0.5); */
+    -ms-transform:rotate(-90deg);
   }
 }

@@ -130,8 +130,8 @@ Template.objects.object = function() {
           width: this.width,
           height: this.height,
           fontFamily: 'helvetica,arial,sans',
-          scaleX: this.scaleX,
-          scaleY: this.scaleY
+          scaleX: this.scaleX||1,
+          scaleY: this.scaleY||1
         });
     }
   }).call(this);
@@ -217,7 +217,7 @@ var on_object_modified = function(memo) {
 _.extend(Template.canvas, {
   events: {
     'click .add-shape': function(e) {
-      return add_fabric_thing($(e.target).data("shape"));
+      return add_fabric_thing($(e.currentTarget||e.target).data("shape"));
     }
   }
 });
