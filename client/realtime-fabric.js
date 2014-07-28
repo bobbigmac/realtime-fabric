@@ -178,6 +178,8 @@ var add_fabric_thing = function(obj_type) {
     data.fill = "rgb(" + (random_range(70, 200)) + "," + (random_range(70, 200)) + "," + (random_range(70, 200)) + ")";
     if (obj_type === "itext") {
       data.text = 'Text';
+      data.scaleX = 1;
+      data.scaleY = 1;
     }
     if (obj_type === "circle") {
       data.scaleX = 0.5;
