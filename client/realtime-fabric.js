@@ -105,6 +105,29 @@ Template.objects.object = function() {
       }
     };
   })(this));
+  
+  function add_canvas_obj(obj) {
+    if(this.obj_type == 'itext')
+    {
+      obj.on("text:changed", function() {
+        obj.on("editing:exited", function() {
+          on_object_modified({target: obj});
+          obj.off("editing:exited");
+        });
+        obj.off("text:changed");
+      });
+    }
+
+    obj.fill = this.fill;
+    obj.setAngle(this.angle);
+    obj.originX = 'center';
+    obj.originY = 'center';
+    obj.left = this.left;
+    obj.top = this.top;
+    obj.mongoid = this._id;
+    obj.obj_type = this.obj_type;
+    window.canvas.add(obj);
+  }
 
   obj = (function() {
     //TODO: Could tweak this to return existing (and not remove them above)
@@ -133,36 +156,34 @@ Template.objects.object = function() {
           scaleX: this.scaleX||1,
           scaleY: this.scaleY||1
         });
+      case "svg":
+        if(this.svgxml)
+        {
+          var self = this;
+          fabric.loadSVGFromString(this.svgxml, function(objects, options) {
+            obj = fabric.util.groupSVGElements(objects, options);
+            obj.scaleX = self.scaleX||1;
+            obj.scaleY = self.scaleY||1;
+            add_canvas_obj.call(self, obj);
+          });
+        }
+        else
+        {
+          //console.log('no svgxml for an image', this._id);
+        }
+        return false;
     }
   }).call(this);
 
-  if(this.obj_type == 'itext')
+  if(obj)
   {
-    (function() { //maybe cleanup anon func
-      var localObj = obj;
-      localObj.on("text:changed", function() {
-        localObj.on("editing:exited", function() {
-          on_object_modified({target: localObj});
-          localObj.off("editing:exited");
-        });
-        localObj.off("text:changed");
-      });
-    })();
+    add_canvas_obj.call(this, obj);
   }
 
-  obj.fill = this.fill;
-  obj.setAngle(this.angle);
-  obj.originX = 'center';
-  obj.originY = 'center';
-  obj.left = this.left;
-  obj.top = this.top;
-  obj.mongoid = this._id;
-  obj.obj_type = this.obj_type;
-  window.canvas.add(obj);
   return "";
 };
 
-var add_fabric_thing = function(obj_type) {
+var add_fabric_thing = function(obj_type, svgName, svgString) {
   var data;
   data = {
     room_id: Session.get('room_id'),
@@ -172,19 +193,23 @@ var add_fabric_thing = function(obj_type) {
     top: random_range(30, 250),
     width: random_range(30, 70),
     height: random_range(30, 70),
+    scaleX: 1,
+    scaleY: 1,
     angle: 0
   };
   if (obj_type === "rect" || obj_type === "triangle" || obj_type === "circle" || obj_type === "itext") {
     data.fill = "rgb(" + (random_range(70, 200)) + "," + (random_range(70, 200)) + "," + (random_range(70, 200)) + ")";
     if (obj_type === "itext") {
       data.text = 'Text';
-      data.scaleX = 1;
-      data.scaleY = 1;
     }
     if (obj_type === "circle") {
       data.scaleX = 0.5;
       data.scaleY = 0.5;
     }
+  }
+  if (obj_type === "svg") {
+    data.svgfilename = svgName;
+    data.svgxml = svgString;
   }
   return Objects.insert(data);
 };
@@ -202,7 +227,7 @@ var on_object_modified = function(memo) {
     data.text = target.text;
     //TODO: Get style
   }
-  if (target.obj_type === "circle" || target.obj_type === "itext") {
+  if (target.obj_type === "circle" || target.obj_type === "itext" || target.obj_type === "svg") {
     data.scaleX = target.scaleX;
     data.scaleY = target.scaleY;
   } else {
@@ -214,10 +239,35 @@ var on_object_modified = function(memo) {
   });
 };
 
+var loadLocalFile = function(file, cb) {
+  if ( file.type.indexOf("image/svg") == 0 ) { 
+    var reader = new FileReader(); 
+    reader.onload = function(e) { 
+      cb(file.name, e.target.result); 
+    }
+    //reader.readAsDataURL(file);
+    reader.readAsText(file); 
+  }
+  else
+  {
+    console.log('invalid file type');
+  }
+}
+
 _.extend(Template.canvas, {
   events: {
+    'change .btn-file :file': function(e, template) {
+      var target = e.currentTarget||e.target;
+      var files = target.files || e.dataTransfer.files;
+      for ( var i = 0, f; f = files[i]; i++ ) {
+        loadLocalFile(f, function(fileName, fileString) {
+          add_fabric_thing('svg', fileName, fileString);
+        });
+      }
+    },
     'click .add-shape': function(e) {
-      return add_fabric_thing($(e.currentTarget||e.target).data("shape"));
+      var target = e.currentTarget||e.target;
+      return add_fabric_thing($(target).data("shape"));
     }
   }
 });
