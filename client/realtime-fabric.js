@@ -126,7 +126,13 @@ Template.objects.object = function() {
     obj.top = this.top;
     obj.mongoid = this._id;
     obj.obj_type = this.obj_type;
+    obj.zPos = this.zPos;
+
     window.canvas.add(obj);
+    if(this.zPos)
+    {
+      window.canvas.moveTo(obj, this.zPos);
+    }
   }
 
   obj = (function() {
@@ -195,7 +201,7 @@ var add_fabric_thing = function(obj_type, svgName, svgString) {
     height: random_range(30, 70),
     scaleX: 1,
     scaleY: 1,
-    angle: 0
+    angle: 0,
   };
   if (obj_type === "rect" || obj_type === "triangle" || obj_type === "circle" || obj_type === "itext") {
     data.fill = "rgb(" + (random_range(70, 200)) + "," + (random_range(70, 200)) + "," + (random_range(70, 200)) + ")";
@@ -217,11 +223,14 @@ var add_fabric_thing = function(obj_type, svgName, svgString) {
 var on_object_modified = function(memo) {
   var data, target;
   target = memo.target;
+  var allObjects = window.canvas.getObjects();
+  var zPos = allObjects.length;//allObjects.indexOf(target);
 
   data = {
     top: target.top,
     left: target.left,
     angle: target.getAngle(),
+    zPos: zPos,
   };
   if (target.obj_type === "itext") {
     data.text = target.text;
